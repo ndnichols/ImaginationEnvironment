@@ -1,0 +1,60 @@
+.screens {
+    width: 1000px;
+    height: 700px;
+    border: 1px solid #999;
+}
+
+.control {
+    cursor: pointer;
+    color: green;
+    text-decoration: underline;
+}
+
+.screen {
+    border: 1px dotted #999;
+    float:left;
+    background-size: 100%;
+    background-origin: content;
+}
+.screen.grid {
+    width: 330px;
+    height: 230px;
+/*    background-size: 330px 230px;    */
+}
+
+.screen.column {
+    width: 990px;
+    height: 230px;
+/*    background-size: 990px 230px;*/
+}
+
+.screen.single {
+    width: 990px;
+    height: 690px;
+/*    background-size: 990px 690px;*/
+}
+
+.text {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    text-align: center;
+    background-color: black;
+    color: white;
+    opacity: 0;
+    font-size: xx-large;
+}
+
+.text.key {
+    color: yellow;
+}
+
+.screen.grid .text{
+    height: 73px;
+}
+.screen.column .text{
+    height: 73px;
+}
+.screen.single .text {
+    height: 225px;
+}
