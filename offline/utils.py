@@ -8,7 +8,7 @@ import urllib
 import BeautifulSoup
 import Image
 
-_cache_dir = './webcache'
+_cache_dir = '/home/nate/Programming/ImaginationEnvironment/webcache'
 assert os.path.isdir(_cache_dir), "zoinks, you forgot to change me to point to a good place for you!"
 _memory_cache = {}
 
@@ -135,7 +135,7 @@ def toascii(text):
 def crop_images(in_url, *out_filenames):
     '''Takes a filename for the image to crop, and a list of filenames to store cropped versions in.
     Returns True or False for success'''
-    temp_filename = '/Users/nate/Desktop/test.jpg'
+    temp_filename = '/home/nate/Desktop/test.jpg'
     img = GetFile(in_url)
     open(temp_filename, 'wb').write(img)
     
@@ -155,4 +155,4 @@ def crop_images(in_url, *out_filenames):
         
         
 if __name__ == '__main__':
-    print crop_images('http://www.softpedia.com/screenshots/Dinosaur-Valley-Animated-Wallpaper_1.jpg', '/Users/nate/Desktop/out1.jpg', '/Users/nate/Desktop/out2.jpg', '/Users/nate/Desktop/out3.jpg')
+    print crop_images('http://www.softpedia.com/screenshots/Dinosaur-Valley-Animated-Wallpaper_1.jpg', '/home/nate/Desktop/out1.jpg', '/home/nate/Desktop/out2.jpg', '/home/nate/Desktop/out3.jpg')
