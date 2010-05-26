@@ -146,13 +146,18 @@ def crop_images(in_url, *out_filenames):
     except IOError, e:
         return False
     for out_filename in out_filenames:
-        crop_width = random.randint(min_image_width, image.size[0] - 1)
-        crop_height = random.randint(min_image_height, image.size[1] - 1)
-        crop_x = random.randint(0, image.size[0] - crop_width - 1)
-        crop_y = random.randint(0, image.size[1] - crop_height - 1)
-        region = image.crop((crop_x, crop_y, crop_width, crop_height))
-        region.save(out_filename)
+        max_scale = min(image.size[0] / float(min_image_width), image.size[1] / float(min_image_height))
+        scale = random.uniform(1.0, max_scale)
+        print scale
+        crop_width = scale * min_image_width#random.randint(min_image_width, image.size[0] - 1)
+        crop_height = scale * min_image_height#random.randint(min_image_height, image.size[1] - 1)
+        crop_x = random.randint(0, int(image.size[0] - crop_width - 1))
+        crop_y = random.randint(0, int(image.size[1] - crop_height - 1))
+        print crop_width, crop_height, crop_x, crop_y
+        crop = (crop_x, crop_y, crop_x + crop_width, crop_y + crop_height)
+        region = image.crop(crop).resize((min_image_width, min_image_height))
+        region.save(out_filename, dpi=(24, 24))
         
         
 if __name__ == '__main__':
-    print crop_images('http://www.softpedia.com/screenshots/Dinosaur-Valley-Animated-Wallpaper_1.jpg', '/home/nate/Desktop/out1.jpg', '/home/nate/Desktop/out2.jpg', '/home/nate/Desktop/out3.jpg')
+    print crop_images('http://stereo.gsfc.nasa.gov/img/spaceweather/preview/tricompSW.jpg', '/home/nate/Desktop/out1.jpg', '/home/nate/Desktop/out2.jpg', '/home/nate/Desktop/out3.jpg')
