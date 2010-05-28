@@ -1,5 +1,7 @@
 var sys = require("sys"),
-    events = require("events");
+    events = require("events"),
+    CouchDB = require('./couchdb').CouchDB;
+CouchDB.debug = false;
 var emitter = new events.EventEmitter();
 
 var screens = [];
@@ -7,6 +9,10 @@ var screens = [];
 var christianImages = ['http://kiddmillennium.files.wordpress.com/2009/02/jesus-thumps-up1.jpg?w=400&h=400', 'http://scrapetv.com/News/News%20Pages/Entertainment/Images/jesus.jpg', 'http://www.morethings.com/god_and_country/jesus/children-jesus-170.gif', 'http://holyhell.files.wordpress.com/2009/02/jesus-christ-w-lamb.jpg', 'http://faithfool.files.wordpress.com/2007/07/white-jesus.jpg'];
 var hinduismImages = ['http://www.indianchild.com/images/hindu_god_ram.jpg', 'http://momstinfoilhat.files.wordpress.com/2009/08/hindu-gods-kali.jpg', 'http://donyes.typepad.com/.a/6a00e554f2e0b988340120a4f85d81970b-800wi', 'http://www.moonbattery.com/archives/hindu-god.jpg', 'https://s3.amazonaws.com:443/cs-vannet/CommunityServer.Components.PostAttachments/00/00/00/16/43/stories+of+krishna+the+adventures+of+a+hindu+god+1.jpg?AWSAccessKeyId=0TTXDM86AJ1CB68A7P02&Expires=1274297361&Signature=7wQIrRGWbr%2bXqR%2b0RMjfwvqswl0%3d'];
 var buddhismImages = ['http://thepopeofpentecost.files.wordpress.com/2010/02/buddhism.jpg', 'http://erinsaley.files.wordpress.com/2009/02/buddah1.jpg', 'http://religions.iloveindia.com/images/buddhism.jpg', 'http://sundaytimes.lk/070527/images/mumbai.jpg', 'http://1.bp.blogspot.com/_WUdmYiDgMdo/S1cTuCRvxuI/AAAAAAAAAQ0/AFJmfBSYlA8/s400/Buddhism.jpg'];
+
+var db = CouchDB.db('imagination', 'http://yorda.cs.northwestern.edu:5984');
+
+var currIndices = {Christianity:1, Hinduism:1, Buddhism:1};
 
 exports.get_screen_emitter = function () {return emitter};
 exports.setup = function() {
@@ -39,43 +45,72 @@ function randElement(arr) {
     return arr[index];
 }
 
+function printObject(obj) {
+    for (var k in obj) {
+        sys.puts(k + "=>" + obj[k]);
+    }
+}
+
+function handleCouchResult(result, column_index) {
+    //I hope you like array math!
+    try {
+        result = result.rows[0].value;
+    }
+    catch(e) {
+        return;
+    }
+    result.passage[result.selected_line] = '<span class="key">' + result.passage[result.selected_line] + '</span>';
+    
+    for (var i = 0; i < 9; i++) {
+        var three_count = Math.floor(i / 3);
+        var screen_index = three_count * 3 + column_index;
+        var text_key = 'text' + (i % 3);
+        screens[screen_index][text_key] = result.passage[i];
+        updateScreen(screen_index);
+        if (!(i % 3)) {
+            screens[screen_index].image_url = 'stored_images/' + result.images[three_count];
+            screens[screen_index].rippleDelay = 10000 * three_count;
+        }
+    }    
+}
+
 function nextChristian() {
-    sys.puts("Next Christian!");
-    screens[0].image_url = randElement(christianImages);
-    screens[0].rippleDelay = 0;
-    updateScreen(0);
-    screens[3].image_url = randElement(christianImages);
-    screens[3].rippleDelay = 10000;
-    updateScreen(3);
-    screens[6].image_url = randElement(christianImages);
-    screens[6].rippleDelay = 20000;
-    updateScreen(6);
+    db.view("religions/religions", {
+        key: ['Christianity', currIndices.Christianity],
+        success: function(result){
+            if (currIndices.Christianity >= result.total_rows) {
+                currIndices.Christianity = 0;
+            }
+            handleCouchResult(result, 0);
+        }
+    });
+    currIndices.Christianity++;
 }
 
 function nextHinduism() {
-    sys.puts("Next Hindu!");
-    screens[1].image_url = randElement(buddhismImages);
-    screens[1].rippleDelay = 0;
-    updateScreen(1);
-    screens[4].image_url = randElement(buddhismImages);
-    screens[4].rippleDelay = 10000;
-    updateScreen(4);
-    screens[7].image_url = randElement(buddhismImages);
-    screens[7].rippleDelay = 20000;
-    updateScreen(7);
+    db.view("religions/religions", {
+        key: ['Hinduism', currIndices.Hinduism],
+        success: function(result){
+            if (currIndices.Hinduism >= result.total_rows) {
+                currIndices.Hinduism = 0;
+            }
+            handleCouchResult(result, 1);
+        }
+    });
+    currIndices.Hinduism++;
 }
 
 function nextBuddhism() {
-    sys.puts("Next Buddhism!");
-    screens[2].image_url = randElement(hinduismImages);
-    screens[2].rippleDelay = 0;
-    updateScreen(2);
-    screens[5].image_url = randElement(hinduismImages);
-    screens[5].rippleDelay = 10000;
-    updateScreen(5);
-    screens[8].image_url = randElement(hinduismImages);
-    screens[8].rippleDelay = 20000;
-    updateScreen(8);
+    db.view("religions/religions", {
+        key: ['Buddhism', currIndices.Buddhism],
+        success: function(result){
+            if (currIndices.Buddhism >= result.total_rows) {
+                currIndices.Buddhism = 0;
+            }
+            handleCouchResult(result, 2);
+        }
+    });
+    currIndices.Buddhism++;
 }
 
 function runChristianity() {

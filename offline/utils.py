@@ -2,47 +2,46 @@ import hashlib
 import random
 import re
 import os
+import shutil
 import time
 import unicodedata
 import urllib
+
 import BeautifulSoup
 import Image
 
-_cache_dir = '/home/nate/Programming/ImaginationEnvironment/webcache'
-assert os.path.isdir(_cache_dir), "zoinks, you forgot to change me to point to a good place for you!"
+import config
+
+assert config.WEB_CACHE_DIR, "You need to put a variable in your config.py that points to a directory you don't mind getting filled with pages"
+assert os.path.isdir(config.WEB_CACHE_DIR), "config.WEB_CACHE_DIR is not pointing to a directory!"
 _memory_cache = {}
 
-min_image_width = 1024
-min_image_height = 768
+target_image_width = 1024
+target_image_height = 768
 
-def _getFile(url,cachedFile=True):
+def _getFile(url, cachedFile=True, return_filename=False):
     """Does some caching too, not threadsafe, nothing fancy, but MC and RT are slow as all hell."""
     assert url, "WHY are you trying to load an empty string url?!?!  Nothing good will come of this!  In fact, I will assure that! %s" % (url)
     md5 = hashlib.md5(url).hexdigest()
-    filename = os.path.join(_cache_dir, md5)
-    # print 'getfile changed'
-    # print url
-    # print 'to'
-    # print filename
-    # print 'getFile got request for %s' % (url)
+    filename = os.path.join(config.WEB_CACHE_DIR, md5)
     if os.path.exists(filename) and cachedFile:
-        # print 'Hit!', filename
         ret = open(filename, 'r').read()
     else:
-        # print 'Miss!'
         opener = urllib.FancyURLopener()
         ret = opener.open(url).read()
-        # ret = pyU.GetFile(url)
         o = open(filename, 'w')
         o.write(ret)
         o.close()
-    return ret
+    if return_filename:
+        return filename
+    else:
+        return ret
     
 def _clearFile(url):
     """This clears the file at url out of the cache, if it was in there.  You can use this for testing stuff, or clearing 
     munged stuff. """
     md5 = hashlib.md5(url).hexdigest()
-    filename = os.path.join(_cache_dir, md5)
+    filename = os.path.join(config.WEB_CACHE_DIR, md5)
     if os.path.exists(filename):
         os.remove(filename)
         
@@ -94,7 +93,7 @@ def scrapeWith(url, func):
         try:
             html = GetFile(url)
         except (IOError, ), e:
-            print 'Got a big IOError trying to GetFile %s' % (url)
+            print 'Got a big IOError trying to MovieName %s and %s and %s' % (t, foo, bar)
             raise
         try:
             ret = func(html)
@@ -135,29 +134,31 @@ def toascii(text):
 def crop_images(in_url, *out_filenames):
     '''Takes a filename for the image to crop, and a list of filenames to store cropped versions in.
     Returns True or False for success'''
-    temp_filename = '/home/nate/Desktop/test.jpg'
-    img = GetFile(in_url)
-    open(temp_filename, 'wb').write(img)
+    img_filename = GetFile(in_url, return_filename=True)
     
-    
-    
-    try:
-        image = Image.open(temp_filename)
-    except IOError, e:
-        return False
-    for out_filename in out_filenames:
-        max_scale = min(image.size[0] / float(min_image_width), image.size[1] / float(min_image_height))
-        scale = random.uniform(1.0, max_scale)
-        print scale
-        crop_width = scale * min_image_width#random.randint(min_image_width, image.size[0] - 1)
-        crop_height = scale * min_image_height#random.randint(min_image_height, image.size[1] - 1)
-        crop_x = random.randint(0, int(image.size[0] - crop_width - 1))
-        crop_y = random.randint(0, int(image.size[1] - crop_height - 1))
-        print crop_width, crop_height, crop_x, crop_y
-        crop = (crop_x, crop_y, crop_x + crop_width, crop_y + crop_height)
-        region = image.crop(crop).resize((min_image_width, min_image_height))
-        region.save(out_filename, dpi=(24, 24))
-        
-        
+    if True:#'jpeg_decoder' in dir(Image.core):
+        try:
+            image = Image.open(img_filename)
+        except IOError, e:
+            return False
+        for out_filename in out_filenames:
+            max_scale = min(image.size[0] / float(target_image_width), image.size[1] / float(target_image_height))
+            scale = random.uniform(1.0, max_scale)
+            print scale
+            crop_width = scale * target_image_width#random.randint(target_image_width, image.size[0] - 1)
+            crop_height = scale * target_image_height#random.randint(target_image_height, image.size[1] - 1)
+            
+            crop_x = random.randint(0, int(image.size[0] - crop_width - 1))
+            crop_y = random.randint(0, int(image.size[1] - crop_height - 1))
+            print crop_width, crop_height, crop_x, crop_y
+            crop = (crop_x, crop_y, crop_x + crop_width, crop_y + crop_height)
+            region = image.crop(crop).resize((target_image_width, target_image_height))
+            region.save(out_filename, dpi=(24, 24))
+    else:
+        print 'No jpeg, just copying'
+        for out_filename in out_filenames:
+            shutil.copyfile(img_filename, out_filename)
+    return True
+            
 if __name__ == '__main__':
-    print crop_images('http://stereo.gsfc.nasa.gov/img/spaceweather/preview/tricompSW.jpg', '/home/nate/Desktop/out1.jpg', '/home/nate/Desktop/out2.jpg', '/home/nate/Desktop/out3.jpg')
+    print crop_images('http://stereo.gsfc.nasa.gov/img/spaceweather/preview/tricompSW.jpg', '/Users/nate/Desktop/out1.jpg', '/Users/nate/Desktop/out2.jpg', '/Users/nate/Desktop/out3.jpg')

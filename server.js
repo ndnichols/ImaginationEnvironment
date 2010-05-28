@@ -9,6 +9,9 @@ var sys = require("sys"),
 
 screens.setup();
 
+var mimetypes = {'.swf':'application/x-shockwave-flash', '.js':'text/javascript', 'html':'text/html', '.css':'text/css', '.jpg':'image/jpeg', 'jpeg':'image/jpeg', '.png':'image/png', '.gif':'image/gif'};
+var static_dir = '/Users/nate/Programming/ImaginationEnvironment/static'
+
 function onScreenUpdate(screen_) {
     listener.broadcast(JSON.stringify(screen_));
 }
@@ -18,9 +21,10 @@ screens.get_screen_emitter().addListener('screen', onScreenUpdate);
 var server = http.createServer(function(req, res) {
     var parsed_req = url.parse(req.url, true);
     var path = parsed_req.pathname;
+    sys.puts(path);
 	switch (path){
 		case '/':
-		    var filename = __dirname + '/imagination.html'
+		    var filename = static_dir + '/imagination.html'
     		res.writeHead(200, {'Content-Type': 'text/html'});
     		res.write(fs.readFileSync(filename, 'utf8'), 'utf8');
     		res.end();
@@ -34,21 +38,24 @@ var server = http.createServer(function(req, res) {
 		default:
 			if (/\/|\.(js|html|swf)$/.test(path)){
 				try {
-					var swf = path.substr(-4) == '.swf';
-					res.writeHead(200, {'Content-Type': swf ? 'application/x-shockwave-flash' : ('text/' + (path.substr(-3) == '.js' ? 'javascript' : 'html'))});
-					res.write(fs.readFileSync(__dirname + path, swf ? 'binary' : 'utf8'), swf ? 'binary' : 'utf8');
+					var filetype = mimetypes[path.substr(-4)];
+					var binary = /^(application|image)/.test(filetype);
+					sys.puts(filetype + " is binary: " + binary);
+					res.writeHead(200, {'Content-Type': filetype});
+					sys.puts("going to read " + (static_dir + path));
+					res.write(fs.readFileSync(static_dir + path, binary ? 'binary' : 'utf8'), binary ? 'binary' : 'utf8');
 					res.end();
-				} catch(e){ 
+				} catch(e){
+				    sys.puts('error!');
 					send404(res); 
 				}				
 				break;
 			}
-
 			send404(res);
 			break;
 	}
     
-})
+});
 
 server.listen(8080);
 

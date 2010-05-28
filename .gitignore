@@ -1,0 +1,4 @@
+*.pyc
+static/stored_images
+*.tmproj
+webcache/
